@@ -122,35 +122,6 @@ langgraph dev
 
 访问 [https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024](https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024)。
 
-## 常见问题
-
-**Windows 下启动报编码错误**
-
-```
-UnicodeDecodeError: 'gbk' codec can't decode...
-```
-
-两种解决方式：
-
-1. 启动时加环境变量：`$env:PYTHONUTF8=1; python -m app.main`
-2. 永久设置 conda 环境：
-   ```bash
-   conda env config vars set PYTHONUTF8=1 -n lang
-   conda deactivate && conda activate lang
-   ```
-
-**数据库文件无法打开**
-
-确保项目根目录下存在 `db/` 文件夹，程序启动时会自动创建。如遇权限问题可手动创建：
-
-```bash
-mkdir db
-```
-
-**OSS 凭证报错**
-
-OSS 客户端采用懒加载，未调用上传接口时不影响启动。如需使用图片上传功能，请确保 `.env` 中 `OSS_ACCESS_KEY_ID` 和 `OSS_ACCESS_KEY_SECRET` 配置正确。
-
 ## License
 
 MIT

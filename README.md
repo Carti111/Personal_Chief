@@ -1,71 +1,71 @@
 # Personal Chief
 
-An AI-powered personal chef built with LangGraph and FastAPI. Snap a photo of your ingredients or type a list — the agent searches the web for recipes, scores them by nutrition and difficulty, and streams back structured recommendations.
+基于 LangGraph 和 FastAPI 构建的 AI 私人厨师。拍一张食材照片或输入食材清单，智能体会自动搜索食谱、从营养和难度两个维度打分排序，并流式返回推荐结果。
 
-## How It Works
+## 工作流程
 
-1. **Identify** — Recognizes ingredients from uploaded photos (multimodal) or text input
-2. **Search** — Queries the web via Tavily to find matching recipes in real time
-3. **Score** — Ranks candidates by nutritional value and ease of preparation
-4. **Recommend** — Returns a structured report with recipes, scores, and reasoning
+1. **识别** — 从上传的照片（多模态）或文字中识别可用食材
+2. **检索** — 通过 Tavily 搜索引擎实时查找匹配的菜谱
+3. **评分** — 从营养价值和制作难度两个维度对候选食谱量化打分
+4. **推荐** — 输出结构化的建议报告，包含食谱、得分和推荐理由
 
-## Architecture
+## 架构
 
 ```
 FastAPI (REST + SSE) ── LangGraph Agent ── Qwen3-Omni-Flash (DashScope)
                               │
                         Tavily Search
                               │
-                    SQLite Checkpointer (memory)
+                    SQLite Checkpointer (记忆)
 ```
 
-| Layer | Stack |
+| 层级 | 技术 |
 |---|---|
-| Agent framework | LangGraph + LangChain |
-| Model | Qwen3-Omni-Flash (Alibaba DashScope, OpenAI-compatible) |
-| Search | Tavily Search API |
-| Server | FastAPI + Uvicorn |
-| Frontend | Next.js (static export) |
-| Storage | SQLite (conversation memory) + Alibaba Cloud OSS (image uploads) |
-| Observability | LangSmith Tracing |
+| Agent 框架 | LangGraph + LangChain |
+| 模型 | Qwen3-Omni-Flash（阿里云 DashScope，兼容 OpenAI） |
+| 搜索 | Tavily Search API |
+| 服务端 | FastAPI + Uvicorn |
+| 前端 | Next.js（静态导出） |
+| 存储 | SQLite（对话记忆）+ 阿里云 OSS（图片上传） |
+| 可观测 | LangSmith Tracing |
 
-## Project Structure
+## 项目结构
 
 ```
 app/
-  main.py                     FastAPI entry point
+  main.py                     FastAPI 入口
   agents/
-    personal_chief.py          LangGraph agent definition
+    personal_chief.py          LangGraph 智能体定义
   api/v1/
-    chat.py                    Chat endpoints (stream, history, clear)
-    oss.py                     OSS presigned upload URL
+    chat.py                    对话接口（流式、历史、清空）
+    oss.py                     OSS 预签名上传
   models/
-    schemas.py                 Request / response models
+    schemas.py                 请求/响应模型
   common/
-    logger.py                  Logging configuration
-  static/                      Frontend (Next.js static export)
-langgraph.json                 LangGraph Studio config
-pyproject.toml                 Project metadata and dependencies
+    logger.py                  日志配置
+  static/                      前端静态文件（Next.js 导出）
+langgraph.json                 LangGraph Studio 配置
+pyproject.toml                 项目元数据和依赖
 ```
 
-## Getting Started
+## 快速开始
 
-### Prerequisites
+### 环境要求
 
-- Python 3.10 or later
-- A [DashScope](https://dashscope.aliyun.com) API key (for Qwen)
-- A [Tavily](https://tavily.com) API key (for web search)
-- Alibaba Cloud OSS credentials (for image uploads, optional at startup)
+- Python 3.10 及以上
+- [DashScope](https://dashscope.aliyun.com) API Key（模型服务）
+- [Tavily](https://tavily.com) API Key（网页搜索）
+- 阿里云 OSS 凭证（图片上传，启动时可省略）
 
-### Install
+### 安装
 
 ```bash
 pip install -e .
 ```
 
-### Configure
+### 配置
 
-Copy the example below into `.env` and fill in your keys:
+在项目根目录创建 `.env` 文件，填入以下内容：
 
 ```env
 DASHSCOPE_API_KEY=
@@ -74,53 +74,53 @@ TAVILY_API_KEY=
 OSS_ACCESS_KEY_ID=
 OSS_ACCESS_KEY_SECRET=
 OSS_BUCKET=
-LANGSMITH_TRACING=true          # optional
-LANGSMITH_API_KEY=              # optional
+LANGSMITH_TRACING=true          # 可选
+LANGSMITH_API_KEY=              # 可选
 LANGSMITH_PROJECT=personal-chief
 ```
 
-### Run
+### 启动
 
 ```bash
 python -m app.main
 ```
 
-On Windows, set `PYTHONUTF8=1` first to avoid encoding issues:
+Windows 下需先设置编码环境变量：
 
 ```powershell
 $env:PYTHONUTF8=1; python -m app.main
 ```
 
-Open [http://127.0.0.1:8001](http://127.0.0.1:8001).
+访问 [http://127.0.0.1:8001](http://127.0.0.1:8001)。
 
 ## API
 
-| Method | Path | Description |
+| 方法 | 路径 | 说明 |
 |---|---|---|
-| `POST` | `/api/v1/chat/stream` | Streaming chat (SSE) |
-| `GET` | `/api/v1/chat/messages?thread_id=` | Conversation history |
-| `DELETE` | `/api/v1/chat/messages?thread_id=` | Clear conversation |
-| `GET` | `/api/v1/oss/presign?filename=` | OSS presigned upload URL |
+| `POST` | `/api/v1/chat/stream` | 流式对话（SSE） |
+| `GET` | `/api/v1/chat/messages?thread_id=` | 获取历史消息 |
+| `DELETE` | `/api/v1/chat/messages?thread_id=` | 清空会话 |
+| `GET` | `/api/v1/oss/presign?filename=` | 获取 OSS 预签名上传 URL |
 
-### Chat Request
+### 对话请求示例
 
 ```json
 {
-  "message": "What can I cook with these?",
+  "message": "这些食材能做什么菜？",
   "image_url": "https://example.com/photo.jpg",
   "thread_id": "session-001"
 }
 ```
 
-`image_url` is optional — omit it for text-only queries.
+`image_url` 为可选字段，不传则仅使用文字输入。
 
-## Debug with LangGraph Studio
+## LangGraph Studio 调试
 
 ```bash
 langgraph dev
 ```
 
-Then visit [https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024](https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024).
+访问 [https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024](https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024)。
 
 ## License
 

@@ -1,155 +1,127 @@
-# 🍳 Personal Chief - 私人厨师智能体
+# Personal Chief
 
-基于 LangGraph + FastAPI 构建的 AI 私人厨师应用。上传食材照片或输入食材清单，智能体自动检索食谱、评估营养价值与制作难度，给出结构化推荐。
+An AI-powered personal chef built with LangGraph and FastAPI. Snap a photo of your ingredients or type a list — the agent searches the web for recipes, scores them by nutrition and difficulty, and streams back structured recommendations.
 
-## ✨ 功能
+## How It Works
 
-- 🔍 **食材识别**：支持上传食材照片（多模态识别）或文字输入食材清单
-- 🍽️ **智能食谱检索**：调用 Tavily 搜索引擎实时查找可行菜谱
-- 📊 **多维度评分**：从营养价值和制作难度两个维度量化打分排序
-- 💬 **流式对话**：SSE 流式输出，实时展示 AI 回复
-- 📝 **会话记忆**：基于 SQLite + LangGraph Checkpoint 持久化对话历史
-- 📎 **图片上传**：集成阿里云 OSS 预签名上传
+1. **Identify** — Recognizes ingredients from uploaded photos (multimodal) or text input
+2. **Search** — Queries the web via Tavily to find matching recipes in real time
+3. **Score** — Ranks candidates by nutritional value and ease of preparation
+4. **Recommend** — Returns a structured report with recipes, scores, and reasoning
 
-## 🛠️ 技术栈
+## Architecture
 
-| 层级 | 技术 |
+```
+FastAPI (REST + SSE) ── LangGraph Agent ── Qwen3-Omni-Flash (DashScope)
+                              │
+                        Tavily Search
+                              │
+                    SQLite Checkpointer (memory)
+```
+
+| Layer | Stack |
 |---|---|
-| AI 框架 | LangGraph + LangChain |
-| 模型 | 通义千问 Qwen3-Omni-Flash（阿里云 DashScope） |
-| 搜索工具 | Tavily Search API |
-| Web 框架 | FastAPI + Uvicorn |
-| 前端 | Next.js（静态导出） |
-| 存储 | SQLite（对话记忆）+ 阿里云 OSS（图片） |
-| 监控 | LangSmith Tracing |
+| Agent framework | LangGraph + LangChain |
+| Model | Qwen3-Omni-Flash (Alibaba DashScope, OpenAI-compatible) |
+| Search | Tavily Search API |
+| Server | FastAPI + Uvicorn |
+| Frontend | Next.js (static export) |
+| Storage | SQLite (conversation memory) + Alibaba Cloud OSS (image uploads) |
+| Observability | LangSmith Tracing |
 
-## 📁 项目结构
+## Project Structure
 
 ```
-├── app/
-│   ├── main.py                    # FastAPI 入口
-│   ├── agents/
-│   │   └── personal_chief.py      # LangGraph 智能体定义
-│   ├── api/v1/
-│   │   ├── chat.py                # 对话 API 路由
-│   │   └── oss.py                 # OSS 上传签名 API
-│   ├── models/
-│   │   └── schemas.py             # 数据模型
-│   ├── common/
-│   │   └── logger.py              # 日志配置
-│   └── static/                    # 前端静态文件（Next.js 导出）
-├── db/                            # SQLite 数据库目录（自动创建）
-├── .env                           # 环境变量配置
-├── langgraph.json                 # LangGraph Studio 配置
-└── pyproject.toml                 # 项目依赖
+app/
+  main.py                     FastAPI entry point
+  agents/
+    personal_chief.py          LangGraph agent definition
+  api/v1/
+    chat.py                    Chat endpoints (stream, history, clear)
+    oss.py                     OSS presigned upload URL
+  models/
+    schemas.py                 Request / response models
+  common/
+    logger.py                  Logging configuration
+  static/                      Frontend (Next.js static export)
+langgraph.json                 LangGraph Studio config
+pyproject.toml                 Project metadata and dependencies
 ```
 
-## 🚀 快速开始
+## Getting Started
 
-### 1. 环境要求
+### Prerequisites
 
-- Python >= 3.10
-- Conda（推荐）或 pip
+- Python 3.10 or later
+- A [DashScope](https://dashscope.aliyun.com) API key (for Qwen)
+- A [Tavily](https://tavily.com) API key (for web search)
+- Alibaba Cloud OSS credentials (for image uploads, optional at startup)
 
-### 2. 创建环境并安装依赖
+### Install
 
 ```bash
-# 创建 conda 环境
-conda create -n lang python=3.12 -y
-conda activate lang
-
-# 安装依赖
 pip install -e .
 ```
 
-### 3. 配置环境变量
+### Configure
 
-编辑 `.env` 文件，填入以下配置：
+Copy the example below into `.env` and fill in your keys:
 
 ```env
-# 阿里云 DashScope（模型服务）
-DASHSCOPE_API_KEY=your_dashscope_api_key
+DASHSCOPE_API_KEY=
 DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-
-# Tavily 搜索
-TAVILY_API_KEY=your_tavily_api_key
-
-# 阿里云 OSS（图片上传）
-OSS_ACCESS_KEY_ID=your_oss_access_key_id
-OSS_ACCESS_KEY_SECRET=your_oss_access_key_secret
-OSS_BUCKET=your_bucket_name
-
-# LangSmith 监控（可选）
-LANGSMITH_TRACING=true
-LANGSMITH_ENDPOINT=https://api.smith.langchain.com
-LANGSMITH_API_KEY=your_langsmith_api_key
+TAVILY_API_KEY=
+OSS_ACCESS_KEY_ID=
+OSS_ACCESS_KEY_SECRET=
+OSS_BUCKET=
+LANGSMITH_TRACING=true          # optional
+LANGSMITH_API_KEY=              # optional
 LANGSMITH_PROJECT=personal-chief
 ```
 
-### 4. 创建数据库目录
+### Run
 
-```bash
-mkdir db
-```
-
-### 5. 启动服务
-
-**Windows（PowerShell）：**
-```powershell
-$env:PYTHONUTF8=1; python -m app.main
-```
-
-**Windows（CMD）：**
-```cmd
-set PYTHONUTF8=1 && python -m app.main
-```
-
-**macOS / Linux：**
 ```bash
 python -m app.main
 ```
 
-启动后访问：**http://127.0.0.1:8001**
+On Windows, set `PYTHONUTF8=1` first to avoid encoding issues:
 
-## 🔌 API 接口
+```powershell
+$env:PYTHONUTF8=1; python -m app.main
+```
 
-| 方法 | 路径 | 说明 |
+Open [http://127.0.0.1:8001](http://127.0.0.1:8001).
+
+## API
+
+| Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/v1/chat/stream` | 流式对话（SSE） |
-| `GET` | `/api/v1/chat/messages?thread_id=xxx` | 获取历史消息 |
-| `DELETE` | `/api/v1/chat/messages?thread_id=xxx` | 清空会话 |
-| `GET` | `/api/v1/oss/presign?filename=xxx.png` | 获取 OSS 上传预签名 URL |
+| `POST` | `/api/v1/chat/stream` | Streaming chat (SSE) |
+| `GET` | `/api/v1/chat/messages?thread_id=` | Conversation history |
+| `DELETE` | `/api/v1/chat/messages?thread_id=` | Clear conversation |
+| `GET` | `/api/v1/oss/presign?filename=` | OSS presigned upload URL |
 
-## 🧪 LangGraph Studio 调试
+### Chat Request
 
-调试 Agent 逻辑时可使用 LangGraph Studio：
-
-```bash
-$env:PYTHONUTF8=1; langgraph dev
+```json
+{
+  "message": "What can I cook with these?",
+  "image_url": "https://example.com/photo.jpg",
+  "thread_id": "session-001"
+}
 ```
 
-访问 https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024
+`image_url` is optional — omit it for text-only queries.
 
-## ⚠️ 常见问题
+## Debug with LangGraph Studio
 
-### Windows 中文系统编码错误
-
-如果在 Windows 上遇到 `UnicodeDecodeError: 'gbk' codec can't decode...`，有两种解决方式：
-
-1. **启动时加环境变量**：`$env:PYTHONUTF8=1; python -m app.main`
-2. **永久设置 conda 环境**：
-   ```bash
-   conda env config vars set PYTHONUTF8=1 -n lang
-   conda deactivate && conda activate lang
-   ```
-
-### 数据库文件无法打开
-
-确保项目根目录下存在 `db/` 文件夹：
 ```bash
-mkdir db
+langgraph dev
 ```
 
-### OSS 凭证报错
+Then visit [https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024](https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2024).
 
-确保 `.env` 中配置了 `OSS_ACCESS_KEY_ID` 和 `OSS_ACCESS_KEY_SECRET`，OSS 客户端采用懒加载，未调用上传接口时不影响启动。
+## License
+
+MIT

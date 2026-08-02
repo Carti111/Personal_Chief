@@ -1,0 +1,22 @@
+[project]
+name = "personal-chef-agent"
+version = "0.1.0"
+description = "私人厨师智能体 - LangGraph Agent"
+requires-python = ">=3.10"
+dependencies = [
+    "langgraph",
+    "langgraph-cli",
+    "langchain",
+    "langchain-openai",
+    "langchain-tavily",
+    "python-dotenv",
+    "fastapi>=0.100",
+    "uvicorn[standard]>=0.23",
+    "alibabacloud_oss_v2",
+    "python-multipart",
+    "pydantic",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
